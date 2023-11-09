@@ -382,7 +382,7 @@ def render_rays(ray_batch,
 
 
 #     raw = run_network(pts)
-    raw = network_query_fn(pts, viewdirs, network_fn)
+    raw = network_query_fn(pts, viewdirs, network_fn) # raw contains chromaticity and density fields
     rgb_map, disp_map, acc_map, weights, depth_map = raw2outputs(raw, z_vals, rays_d, raw_noise_std, white_bkgd, pytest=pytest)
 
     if N_importance > 0:
@@ -530,13 +530,7 @@ def config_parser():
 
     return parser
 
-
-def train():
-
-    parser = config_parser()
-    args = parser.parse_args()
-
-    # Load data
+def load_data(args):
     K = None
     if args.dataset_type == 'llff':
         images, poses, bds, render_poses, i_test = load_llff_data(args.datadir, args.factor,
@@ -621,6 +615,23 @@ def train():
 
     if args.render_test:
         render_poses = np.array(poses[i_test])
+
+    return images, poses, render_poses, hwf, K, i_train, i_val, i_test, near, far
+
+def train():
+    parser = config_parser()
+    args = parser.parse_args()
+
+    # Load data
+    images, poses, render_poses, hwf, K, i_train, i_val, i_test, near, far = load_data(args)
+    H, W, _ = hwf
+
+    # print('*'*80)
+    # print('Loaded data')
+    # print('render poses', type(render_poses), render_poses.shape, render_poses.dtype, render_poses.min(), render_poses.max())
+    # print('K', type(K), K)
+    # print('near', near, 'far', far)
+    # print('*'*80)
 
     # Create log dir and copy the config file
     basedir = args.basedir
